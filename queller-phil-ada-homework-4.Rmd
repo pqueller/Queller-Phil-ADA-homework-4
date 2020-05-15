@@ -5,9 +5,6 @@ date: "5/9/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 ## R Markdown
 
@@ -15,20 +12,6 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-
-install.packages("devtools")
-install.packages("scales")
-install.packages("collapse")
-install.packages("BBmisc")
-remotes::install_github("joachim-gassen/tidycovid19")
-install.packages("patchwork")
-install.packages("tidyverse")
-install.packages("MASS")
-install.packages("AICcmodavg")
-install.packages("MuMIn")
-
-```
 
 ```{r}
 
@@ -49,11 +32,17 @@ library(lme4)
 ```
 
 ```{r}
-
 merged <- download_merged_data(cached = TRUE)
 merged <- merged %>%
   group_by(country, iso3c) %>%
   arrange(country, iso3c, date) %>%
+  ## new code to replace NAs with zeros
+  mutate(
+    confirmed = ifelse(is.na(confirmed), 0, confirmed),
+    deaths = ifelse(is.na(deaths), 0, deaths),
+    recovered = ifelse(is.na(recovered), 0, recovered)
+  ) %>%
+  ## end of new code
   mutate(
     daily_confirmed = confirmed - lag(confirmed, n = 1),
     daily_deaths = deaths - lag(deaths, n = 1),
@@ -71,8 +60,10 @@ add_world1 <- merged %>%
   group_by(date) %>%
   arrange(date) %>%
   summarize(
-    country = "World", iso3c = NA, confirmed = sum(confirmed),
-    deaths = sum(deaths), recovered = sum(recovered),
+    country = "World", iso3c = NA,
+    confirmed = sum(confirmed, na.rm = TRUE),
+    deaths = sum(deaths, na.rm = TRUE),
+    recovered = sum(recovered, na.rm = TRUE),
     timestamp = fmode(timestamp)
   ) %>%
   mutate(
@@ -115,7 +106,9 @@ cv_data <- pivot_longer(merged,
 ) %>%
   arrange(country, variable, date) %>%
   rename(area = land_area_skm, density = pop_density) %>%
-  mutate(rate = cases / population * 10^6)
+  mutate(rate = cases / population * 10^6) %>%
+  ## new code to omit data before 2020-05-11
+  filter(date < "2020-05-11")
 
 ```
 
@@ -125,8 +118,8 @@ cv_summary <- function(d, country_list = "World",
                        plot = TRUE, facet = "country",
                        status = c("confirmed", "deaths", "recovered")) {
 
-  # based on `wes_palettes()` GrandBudapest1, IsleofDogs1, IsleofDogs2
-  # from the {wesanderson} package
+  # based on `wes_palettes()` color schemes GrandBudapest1, IsleofDogs1,
+  # IsleofDogs2 from the {wesanderson} package
   my_palette <- c(
     "#5B1A18", "#FD6467", "#F1BB7B", "#D67236",
     "#0F0D0E", "#9986A5", "#79402E", "#CCBA72", "#D9D0D3", "#8D8680",
@@ -250,7 +243,6 @@ cv_summary <- function(d, country_list = "World",
     return(list(totals = totals))
   }
 }
-
 ```
 
 #CHALLENGE 1:

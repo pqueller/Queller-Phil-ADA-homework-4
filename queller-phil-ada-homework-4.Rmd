@@ -6,13 +6,6 @@ output: html_document
 ---
 
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-
 ```{r}
 
 library(devtools)
@@ -30,7 +23,7 @@ library(lme4)
 
 
 ```
-
+# Preliminaries
 ```{r}
 merged <- download_merged_data(cached = TRUE)
 merged <- merged %>%
@@ -289,14 +282,10 @@ t <- summary$totals %>% filter(population > 1000000)
 length(unique(t$country))
 
 ```
+There are 153 countries in the tibble. 
 
 
-
-
-
-
-
-CHALLENGE 4:
+#CHALLENGE 4:
 
 Filter d to generate two additional tibbles, overall and daily that include only data on the variables “confirmed” and “daily_confirmed” cases, respectively. Depending on the dataset, the case and rate variables either reflect the overall (i.e., across the pandemic) or maximum daily number of cases and number of cases recorded per million people in the population. Which 10 countries have experienced the highest over rate of confirmed cases? Which 10 countries have experienced the highest single-day rate of confirmed cases?
 
@@ -309,12 +298,14 @@ daily <- t %>% filter(variable == "daily_confirmed")
 
 toptenOverall <- overall %>% arrange(desc(cases)) %>%
                  slice(1:10)
+toptenOverall$country
 
 toptenDailyMax <- daily  %>% arrange(desc(rate)) %>%
                  slice(1:10)
+toptenDailyMax$country
 ```
 
-CHALLENGE 5:
+#CHALLENGE 5:
 
 Run a linear model to evaluate how the overall infection rate (rate) is related to the variables population density (density), population size (population), gross domestic product per capita (gdp_capita), and overall income level (income). In doing so, you should run exploratory visualizations to see whether or not the four numeric variables should be transformed.
 
@@ -353,7 +344,10 @@ summary(fit)
 
 
 ```
-CHALLENGE 6:
+log(gdp_capita) and log(density) have slopes significantly different than zero. 
+
+
+#CHALLENGE 6:
 
 Run stepwise selection using AIC to evaluate whether the full model or a nested, simpler model is preferred. What is the best model (based on AIC) of the possible ones involving these 4 predictors? What are the “pseudo-R2” values associated with the full and “best” models?
 
@@ -392,7 +386,7 @@ r.squaredGLMM(AIC_best)
 AIC indicates the best model from the "daily" tibble log(rate) ~ log(density) + log(population) + log(gdp_capita). Again, the pseudo-R2 values drop slightly from 0.5523888 in the full model to 0.5454554 in the AIC best model. The AIC best models between the daily and overall infection rates share density and gdp as strong explanatory variables. The AIC best model on daily infection rates also includes population as an explanatory variable. 
 
 
-CHALLENGE 7:
+#CHALLENGE 7:
 
 To the best model you determined in CHALLENGE 6 for predicting the maximum daily infection rate, add in the maximum social distancing (max_sd) and maximum movement restriction (max_mr) score per country. Do either of these additional variable improve the model significantly?
 
@@ -425,7 +419,7 @@ Yes, adding max_sd and max_mr increased the predictive power of the model. The A
 
 
 
-CHALLENGE 8:
+#CHALLENGE 8:
 
 Finally, let’s go back to the original cv_data tibble. we will now run a set of “mixed effects” model! First, filter the tibble to include only data for countries with a population of > 1 million and to include only those rows of data for daily_confirmed cases (i.e., variable == “daily_confirmed”). Also filter the dataset to only include rows where rate > 0 (i.e., where there was at least 1 new recorded cases on a day). Then, run a set of linear mixed effects models that include the fixed and random effects indicated in the table below. Start with the full model (4 fixed effects and 2 random effects) as m1 and then run nested models with different subsets of fixed predictors, but always keeping country and date as random effects. Use the lmer() function from the {lme4} package with the argument REML=FALSE specified, as discussed in Module 24. Then, construct an AIC table for the full set of models that you run, and be sure to run a null model with ONLY random effects. What is the best model of the complete set that you ran? What is the “pseudo-R2” value associated with that model?
 
